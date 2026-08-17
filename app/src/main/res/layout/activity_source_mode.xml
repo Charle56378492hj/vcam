@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/color_bg_light"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
+
+        <LinearLayout
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginTop="44dp"
+            android:gravity="center"
+            android:background="@drawable/bg_icon_circle_accent">
+            <ImageView
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:src="@drawable/ic_camera_launcher"
+                android:tint="@color/white"
+                android:contentDescription="@string/app_name"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/source_mode_title"
+            android:textColor="@color/color_text_dark"
+            android:textSize="26sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/source_mode_subtitle"
+            android:textColor="@color/color_text_medium"
+            android:textSize="14sp"
+            android:lineSpacingExtra="4dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_local_upload"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="36dp"
+            android:text="@string/source_local_upload"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/color_primary_brand"
+            app:cornerRadius="16dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_obs_bridge"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="14dp"
+            android:text="@string/source_obs_bridge"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/color_primary_brand"
+            android:backgroundTint="@color/white"
+            app:strokeColor="@color/color_primary_brand"
+            app:strokeWidth="2dp"
+            app:cornerRadius="16dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:padding="14dp"
+            android:background="@drawable/bg_hint_box"
+            android:text="@string/source_mode_note"
+            android:textColor="@color/color_text_medium"
+            android:textSize="12sp"
+            android:lineSpacingExtra="3dp"/>
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,862 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/color_bg_light">
+
+    <!-- ══ TOP APP BAR ══ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/white"
+        android:paddingStart="16dp"
+        android:paddingEnd="12dp"
+        android:elevation="4dp">
+
+        <LinearLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:background="@color/color_primary_light"
+            android:layout_marginEnd="12dp">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_camera_launcher"
+                android:tint="@color/color_primary_brand"
+                android:contentDescription="Logo"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Virtual Cam"
+                android:textColor="@color/color_text_dark"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Camera Injection Studio"
+                android:textColor="@color/color_text_hint"
+                android:textSize="10sp"/>
+        </LinearLayout>
+
+        <!-- Root Status Badge -->
+        <TextView
+            android:id="@+id/tv_root_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Root"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/color_root_ok"
+            android:background="@drawable/bg_status_dot"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:layout_marginEnd="8dp"/>
+
+        <!-- My Account Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_my_account"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:text="حسابي"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/color_primary_brand"
+            app:cornerRadius="10dp"
+            android:backgroundTint="@color/color_primary_light"
+            app:strokeColor="@color/color_primary_brand"
+            app:strokeWidth="1dp"/>
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_border"/>
+
+    <!-- ══ MAIN SCROLLABLE CONTENT ══ -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- ══ HERO / STATUS CARD ══ -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="18dp"
+                app:cardBackgroundColor="@color/color_primary_brand"
+                app:cardElevation="6dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="20dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Virtual Camera"
+                            android:textColor="#CCFFFFFF"
+                            android:textSize="12sp"
+                            android:letterSpacing="0.1"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="جاهز للحقن"
+                            android:textColor="@color/white"
+                            android:textSize="22sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="2dp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ارفع صورة أو فيديو واضغط Start"
+                            android:textColor="#AAFFFFFF"
+                            android:textSize="12sp"
+                            android:layout_marginTop="4dp"/>
+
+                    </LinearLayout>
+
+                    <!-- Big Start/Stop Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_start_stop"
+                        android:layout_width="100dp"
+                        android:layout_height="48dp"
+                        android:text="Start"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_primary_brand"
+                        app:cornerRadius="14dp"
+                        android:backgroundTint="@color/white"
+                        android:enabled="false"/>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ══ IMAGE SLOTS SECTION ══ -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="3dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="حقول الصور"
+                        android:textColor="@color/color_text_dark"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="12dp"/>
+
+                    <!-- Row 1: Slots 1 & 2 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="10dp">
+
+                        <!-- Slot 1 -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_slot_1"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="5dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardBackgroundColor="@color/color_bg_light"
+                            app:cardElevation="1dp">
+                            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+                                <ImageView android:id="@+id/iv_slot_1"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:scaleType="centerCrop" android:visibility="gone"
+                                    android:contentDescription="Slot 1"/>
+                                <LinearLayout android:id="@+id/placeholder_slot_1"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:orientation="vertical" android:gravity="center"
+                                    android:background="@drawable/bg_slot_placeholder">
+                                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                                        android:src="@drawable/ic_image" android:tint="@color/color_primary_brand"
+                                        android:contentDescription="Add"/>
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                        android:text="صورة 1" android:textColor="@color/color_text_dark"
+                                        android:textSize="11sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                        android:text="يبدأ تلقائياً" android:textColor="@color/color_primary_brand"
+                                        android:textSize="9sp"/>
+                                </LinearLayout>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                    android:text="1" android:textColor="@color/white" android:textSize="10sp"
+                                    android:textStyle="bold" android:background="@drawable/bg_slot_badge"
+                                    android:layout_gravity="top|start" android:layout_margin="5dp"
+                                    android:paddingStart="5dp" android:paddingEnd="5dp"
+                                    android:paddingTop="2dp" android:paddingBottom="2dp"/>
+                                <ImageButton android:id="@+id/btn_delete_slot_1"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="top|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_close" android:background="@drawable/bg_badge"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Delete"/>
+                                <ImageButton android:id="@+id/btn_rotate_slot_1"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="bottom|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_rotate_cw" android:background="@drawable/bg_fab_action"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Rotate"/>
+                            </FrameLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <!-- Slot 2 -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_slot_2"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="5dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardBackgroundColor="@color/color_bg_light"
+                            app:cardElevation="1dp">
+                            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+                                <ImageView android:id="@+id/iv_slot_2"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:scaleType="centerCrop" android:visibility="gone"
+                                    android:contentDescription="Slot 2"/>
+                                <LinearLayout android:id="@+id/placeholder_slot_2"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:orientation="vertical" android:gravity="center"
+                                    android:background="@drawable/bg_slot_placeholder">
+                                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                                        android:src="@drawable/ic_image" android:tint="@color/color_steel"
+                                        android:contentDescription="Add"/>
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                        android:text="صورة 2" android:textColor="@color/color_text_medium"
+                                        android:textSize="11sp" android:layout_marginTop="4dp"/>
+                                </LinearLayout>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                    android:text="2" android:textColor="@color/white" android:textSize="10sp"
+                                    android:textStyle="bold" android:background="@drawable/bg_slot_badge"
+                                    android:layout_gravity="top|start" android:layout_margin="5dp"
+                                    android:paddingStart="5dp" android:paddingEnd="5dp"
+                                    android:paddingTop="2dp" android:paddingBottom="2dp"/>
+                                <ImageButton android:id="@+id/btn_delete_slot_2"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="top|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_close" android:background="@drawable/bg_badge"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Delete"/>
+                                <ImageButton android:id="@+id/btn_rotate_slot_2"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="bottom|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_rotate_cw" android:background="@drawable/bg_fab_action"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Rotate"/>
+                            </FrameLayout>
+                        </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+
+                    <!-- Row 2: Slots 3 & 4 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <!-- Slot 3 -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_slot_3"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="5dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardBackgroundColor="@color/color_bg_light"
+                            app:cardElevation="1dp">
+                            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+                                <ImageView android:id="@+id/iv_slot_3"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:scaleType="centerCrop" android:visibility="gone"
+                                    android:contentDescription="Slot 3"/>
+                                <LinearLayout android:id="@+id/placeholder_slot_3"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:orientation="vertical" android:gravity="center"
+                                    android:background="@drawable/bg_slot_placeholder">
+                                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                                        android:src="@drawable/ic_image" android:tint="@color/color_steel"
+                                        android:contentDescription="Add"/>
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                        android:text="صورة 3" android:textColor="@color/color_text_medium"
+                                        android:textSize="11sp" android:layout_marginTop="4dp"/>
+                                </LinearLayout>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                    android:text="3" android:textColor="@color/white" android:textSize="10sp"
+                                    android:textStyle="bold" android:background="@drawable/bg_slot_badge"
+                                    android:layout_gravity="top|start" android:layout_margin="5dp"
+                                    android:paddingStart="5dp" android:paddingEnd="5dp"
+                                    android:paddingTop="2dp" android:paddingBottom="2dp"/>
+                                <ImageButton android:id="@+id/btn_delete_slot_3"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="top|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_close" android:background="@drawable/bg_badge"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Delete"/>
+                                <ImageButton android:id="@+id/btn_rotate_slot_3"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="bottom|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_rotate_cw" android:background="@drawable/bg_fab_action"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Rotate"/>
+                            </FrameLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <!-- Slot 4 -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_slot_4"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="5dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardBackgroundColor="@color/color_bg_light"
+                            app:cardElevation="1dp">
+                            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+                                <ImageView android:id="@+id/iv_slot_4"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:scaleType="centerCrop" android:visibility="gone"
+                                    android:contentDescription="Slot 4"/>
+                                <LinearLayout android:id="@+id/placeholder_slot_4"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:orientation="vertical" android:gravity="center"
+                                    android:background="@drawable/bg_slot_placeholder">
+                                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                                        android:src="@drawable/ic_image" android:tint="@color/color_steel"
+                                        android:contentDescription="Add"/>
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                        android:text="صورة 4" android:textColor="@color/color_text_medium"
+                                        android:textSize="11sp" android:layout_marginTop="4dp"/>
+                                </LinearLayout>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                    android:text="4" android:textColor="@color/white" android:textSize="10sp"
+                                    android:textStyle="bold" android:background="@drawable/bg_slot_badge"
+                                    android:layout_gravity="top|start" android:layout_margin="5dp"
+                                    android:paddingStart="5dp" android:paddingEnd="5dp"
+                                    android:paddingTop="2dp" android:paddingBottom="2dp"/>
+                                <ImageButton android:id="@+id/btn_delete_slot_4"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="top|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_close" android:background="@drawable/bg_badge"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Delete"/>
+                                <ImageButton android:id="@+id/btn_rotate_slot_4"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="bottom|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_rotate_cw" android:background="@drawable/bg_fab_action"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Rotate"/>
+                            </FrameLayout>
+                        </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ══ VIDEO SLOTS SECTION ══ -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="3dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="حقول الفيديو"
+                            android:textColor="@color/color_text_dark"
+                            android:textSize="15sp" android:textStyle="bold"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="5–8"
+                            android:textColor="@color/color_video_accent"
+                            android:textSize="12sp" android:textStyle="bold"
+                            android:background="@drawable/bg_slot_btn_video"
+                            android:paddingStart="8dp" android:paddingEnd="8dp"
+                            android:paddingTop="3dp" android:paddingBottom="3dp"/>
+                    </LinearLayout>
+
+                    <!-- Row 1: Slots 5 & 6 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="10dp">
+
+                        <!-- Slot 5 -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_slot_5"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="5dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardBackgroundColor="@color/color_video_accent_bg"
+                            app:cardElevation="1dp">
+                            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+                                <ImageView android:id="@+id/iv_slot_5"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:scaleType="centerCrop" android:visibility="gone"
+                                    android:contentDescription="Slot 5"/>
+                                <LinearLayout android:id="@+id/placeholder_slot_5"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:orientation="vertical" android:gravity="center"
+                                    android:background="@drawable/bg_slot_placeholder_video">
+                                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                                        android:src="@drawable/ic_video" android:tint="@color/color_video_accent"
+                                        android:contentDescription="Add"/>
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                        android:text="فيديو 5" android:textColor="@color/color_video_accent"
+                                        android:textSize="11sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                                </LinearLayout>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                    android:text="5" android:textColor="@color/white" android:textSize="10sp"
+                                    android:textStyle="bold" android:background="@drawable/bg_slot_badge"
+                                    android:layout_gravity="top|start" android:layout_margin="5dp"
+                                    android:paddingStart="5dp" android:paddingEnd="5dp"
+                                    android:paddingTop="2dp" android:paddingBottom="2dp"/>
+                                <ImageButton android:id="@+id/btn_delete_slot_5"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="top|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_close" android:background="@drawable/bg_badge"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Delete"/>
+                                <ImageButton android:id="@+id/btn_rotate_slot_5"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="bottom|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_rotate_cw" android:background="@drawable/bg_fab_action"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Rotate"/>
+                            </FrameLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <!-- Slot 6 -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_slot_6"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="5dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardBackgroundColor="@color/color_video_accent_bg"
+                            app:cardElevation="1dp">
+                            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+                                <ImageView android:id="@+id/iv_slot_6"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:scaleType="centerCrop" android:visibility="gone"
+                                    android:contentDescription="Slot 6"/>
+                                <LinearLayout android:id="@+id/placeholder_slot_6"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:orientation="vertical" android:gravity="center"
+                                    android:background="@drawable/bg_slot_placeholder_video">
+                                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                                        android:src="@drawable/ic_video" android:tint="@color/color_video_accent"
+                                        android:contentDescription="Add"/>
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                        android:text="فيديو 6" android:textColor="@color/color_video_accent"
+                                        android:textSize="11sp" android:layout_marginTop="4dp"/>
+                                </LinearLayout>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                    android:text="6" android:textColor="@color/white" android:textSize="10sp"
+                                    android:textStyle="bold" android:background="@drawable/bg_slot_badge"
+                                    android:layout_gravity="top|start" android:layout_margin="5dp"
+                                    android:paddingStart="5dp" android:paddingEnd="5dp"
+                                    android:paddingTop="2dp" android:paddingBottom="2dp"/>
+                                <ImageButton android:id="@+id/btn_delete_slot_6"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="top|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_close" android:background="@drawable/bg_badge"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Delete"/>
+                                <ImageButton android:id="@+id/btn_rotate_slot_6"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="bottom|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_rotate_cw" android:background="@drawable/bg_fab_action"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Rotate"/>
+                            </FrameLayout>
+                        </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+
+                    <!-- Row 2: Slots 7 & 8 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <!-- Slot 7 -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_slot_7"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="5dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardBackgroundColor="@color/color_video_accent_bg"
+                            app:cardElevation="1dp">
+                            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+                                <ImageView android:id="@+id/iv_slot_7"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:scaleType="centerCrop" android:visibility="gone"
+                                    android:contentDescription="Slot 7"/>
+                                <LinearLayout android:id="@+id/placeholder_slot_7"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:orientation="vertical" android:gravity="center"
+                                    android:background="@drawable/bg_slot_placeholder_video">
+                                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                                        android:src="@drawable/ic_video" android:tint="@color/color_video_accent"
+                                        android:contentDescription="Add"/>
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                        android:text="فيديو 7" android:textColor="@color/color_video_accent"
+                                        android:textSize="11sp" android:layout_marginTop="4dp"/>
+                                </LinearLayout>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                    android:text="7" android:textColor="@color/white" android:textSize="10sp"
+                                    android:textStyle="bold" android:background="@drawable/bg_slot_badge"
+                                    android:layout_gravity="top|start" android:layout_margin="5dp"
+                                    android:paddingStart="5dp" android:paddingEnd="5dp"
+                                    android:paddingTop="2dp" android:paddingBottom="2dp"/>
+                                <ImageButton android:id="@+id/btn_delete_slot_7"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="top|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_close" android:background="@drawable/bg_badge"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Delete"/>
+                                <ImageButton android:id="@+id/btn_rotate_slot_7"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="bottom|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_rotate_cw" android:background="@drawable/bg_fab_action"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Rotate"/>
+                            </FrameLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <!-- Slot 8 -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_slot_8"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="5dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardBackgroundColor="@color/color_video_accent_bg"
+                            app:cardElevation="1dp">
+                            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+                                <ImageView android:id="@+id/iv_slot_8"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:scaleType="centerCrop" android:visibility="gone"
+                                    android:contentDescription="Slot 8"/>
+                                <LinearLayout android:id="@+id/placeholder_slot_8"
+                                    android:layout_width="match_parent" android:layout_height="match_parent"
+                                    android:orientation="vertical" android:gravity="center"
+                                    android:background="@drawable/bg_slot_placeholder_video">
+                                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                                        android:src="@drawable/ic_video" android:tint="@color/color_video_accent"
+                                        android:contentDescription="Add"/>
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                        android:text="فيديو 8" android:textColor="@color/color_video_accent"
+                                        android:textSize="11sp" android:layout_marginTop="4dp"/>
+                                </LinearLayout>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                    android:text="8" android:textColor="@color/white" android:textSize="10sp"
+                                    android:textStyle="bold" android:background="@drawable/bg_slot_badge"
+                                    android:layout_gravity="top|start" android:layout_margin="5dp"
+                                    android:paddingStart="5dp" android:paddingEnd="5dp"
+                                    android:paddingTop="2dp" android:paddingBottom="2dp"/>
+                                <ImageButton android:id="@+id/btn_delete_slot_8"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="top|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_close" android:background="@drawable/bg_badge"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Delete"/>
+                                <ImageButton android:id="@+id/btn_rotate_slot_8"
+                                    android:layout_width="26dp" android:layout_height="26dp"
+                                    android:layout_gravity="bottom|end" android:layout_margin="5dp"
+                                    android:src="@drawable/ic_rotate_cw" android:background="@drawable/bg_fab_action"
+                                    android:tint="@color/white" android:visibility="gone"
+                                    android:contentDescription="Rotate"/>
+                            </FrameLayout>
+                        </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ══ LINK / CONNECT SECTION ══ -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="3dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="الربط بالحاسوب"
+                                android:textColor="@color/color_text_dark"
+                                android:textSize="15sp"
+                                android:textStyle="bold"/>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Conect VCam"
+                                android:textColor="@color/color_text_hint"
+                                android:textSize="11sp"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switch_link"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:thumbTint="@color/color_primary_brand"
+                            android:trackTint="@color/color_primary_light"/>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="المنفذ: "
+                            android:textColor="@color/color_text_medium"
+                            android:textSize="13sp"/>
+
+                        <TextView
+                            android:id="@+id/tv_link_port"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="——"
+                            android:textColor="@color/color_text_dark"
+                            android:textSize="13sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="TOKEN"
+                            android:textColor="@color/color_text_hint"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.08"
+                            android:layout_marginEnd="8dp"/>
+
+                        <TextView
+                            android:id="@+id/tv_link_token"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="——"
+                            android:textColor="@color/color_primary_brand"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.15"/>
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/link_hint"
+                        android:textColor="@color/color_text_medium"
+                        android:textSize="11sp"
+                        android:lineSpacingExtra="3dp"
+                        android:background="@drawable/bg_hint_box"
+                        android:padding="10dp"/>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- ══ LIVE PREVIEW (Bridg stream) ══ -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_live_preview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="3dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <View
+                            android:id="@+id/view_live_dot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_status_dot"
+                            android:layout_marginEnd="8dp"
+                            android:backgroundTint="@color/color_text_hint"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/live_preview_title"
+                            android:textColor="@color/color_text_dark"
+                            android:textSize="15sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:id="@+id/tv_live_status"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/live_preview_idle"
+                            android:textColor="@color/color_text_hint"
+                            android:textSize="11sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp">
+
+                        <ImageView
+                            android:id="@+id/iv_live_preview"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:background="@drawable/bg_live_preview"
+                            android:contentDescription="@string/live_preview_title"/>
+
+                        <LinearLayout
+                            android:id="@+id/layout_preview_placeholder"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:background="@drawable/bg_live_preview">
+                            <ImageView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:src="@drawable/ic_video"
+                                android:tint="@color/color_text_hint"
+                                android:contentDescription="Preview"/>
+                            <TextView
+                                android:id="@+id/tv_preview_placeholder"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/live_preview_idle"
+                                android:textColor="@color/color_text_hint"
+                                android:textSize="12sp"
+                                android:layout_marginTop="8dp"/>
+                        </LinearLayout>
+                    </FrameLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Bottom spacing -->
+            <View android:layout_width="match_parent" android:layout_height="24dp"/>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Hidden legacy views kept for binding compatibility -->
+    <View android:id="@+id/layout_media_type" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"/>
+    <ImageView android:id="@+id/iv_media_preview" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"/>
+    <androidx.cardview.widget.CardView android:id="@+id/card_media" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" app:cardBackgroundColor="@color/color_background">
+        <TextView android:id="@+id/tv_media_selected" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
+        <com.google.android.material.button.MaterialButton android:id="@+id/btn_clear_media" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:visibility="gone" style="@style/Widget.MaterialComponents.Button.TextButton"/>
+    </androidx.cardview.widget.CardView>
+    <com.google.android.material.button.MaterialButton android:id="@+id/btn_pick_image" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" app:cornerRadius="0dp"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/btn_pick_video" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" app:cornerRadius="0dp"/>
+
+</LinearLayout>

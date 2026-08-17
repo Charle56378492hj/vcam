@@ -1,0 +1,19 @@
+# Secrets
+.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+
+# Build outputs
+build/
+.gradle/
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+local.properties
+.DS_Store
