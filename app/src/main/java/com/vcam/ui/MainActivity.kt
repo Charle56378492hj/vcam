@@ -27,6 +27,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.vcam.R
+import com.vcam.BuildConfig
 import com.vcam.data.AuthManager
 import com.vcam.data.SubscriptionManager
 import com.vcam.databinding.ActivityMainBinding
@@ -234,24 +235,33 @@ class MainActivity : AppCompatActivity() {
             if (running) {
                 stopVCamService()
             } else {
-                // Check subscription before allowing start
+                // Subscription enforcement is controlled by BuildConfig so the
+                // billing system remains intact and can be re-enabled later.
                 lifecycleScope.launch {
                     val user = AuthManager.currentUser()
                     if (user == null) {
                         val refreshed = AuthManager.refreshSession()
                         val refreshedUser = AuthManager.currentUser()
                         if (!refreshed || refreshedUser == null) { goToLogin(); return@launch }
-                        val hasSub = SubscriptionManager.hasActiveSubscription(refreshedUser.id)
-                        runOnUiThread {
-                            if (hasSub) tryStartVCamService() else showSubscriptionRequired()
+                        if (!BuildConfig.SUBSCRIPTION_REQUIRED) {
+                            runOnUiThread { tryStartVCamService() }
+                        } else {
+                            val hasSub = SubscriptionManager.hasActiveSubscription(refreshedUser.id)
+                            runOnUiThread {
+                                if (hasSub) tryStartVCamService() else showSubscriptionRequired()
+                            }
                         }
                     } else {
-                        val hasSub = SubscriptionManager.hasActiveSubscription(user.id)
-                        runOnUiThread {
-                            if (hasSub) {
-                                tryStartVCamService()
-                            } else {
-                                showSubscriptionRequired()
+                        if (!BuildConfig.SUBSCRIPTION_REQUIRED) {
+                            tryStartVCamService()
+                        } else {
+                            val hasSub = SubscriptionManager.hasActiveSubscription(user.id)
+                            runOnUiThread {
+                                if (hasSub) {
+                                    tryStartVCamService()
+                                } else {
+                                    showSubscriptionRequired()
+                                }
                             }
                         }
                     }
