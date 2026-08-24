@@ -33,6 +33,14 @@ plugins {
           buildConfigField("String", "SUPABASE_ANON_KEY", "\"${System.getenv("SUPABASE_ANON_KEY") ?: project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
           // Google OAuth Web Client ID (from Google Cloud Console)
           buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${System.getenv("GOOGLE_WEB_CLIENT_ID") ?: project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+          // Temporary feature flag: keep subscription code available while allowing
+          // all authenticated users to use the app during the free period.
+          val subscriptionRequired = (
+              System.getenv("SUBSCRIPTION_REQUIRED")
+                  ?: project.findProperty("SUBSCRIPTION_REQUIRED")
+                  ?: "false"
+              ).toString().toBoolean()
+          buildConfigField("boolean", "SUBSCRIPTION_REQUIRED", subscriptionRequired.toString())
       }
 
       buildTypes {
