@@ -165,4 +165,6 @@
     <string name="bridge_not_enabled_msg">فعّل الربط بالأعلى أولاً لاستخدام بث Bridg</string>
     <string name="bridge_no_frames_yet">لا يوجد بث بعد — تأكد أن Bridg يعمل على الكمبيوتر</string>
     <string name="bridge_injection_active">حقن Bridg مباشر — البث يعمل الآن</string>
+    <string name="float_obs_live">OBS مباشر</string>
+    <string name="bridge_source_locked">بث OBS المباشر نشط؛ أوقفه أولاً لتبديل مصدر محلي.</string>
 </resources>
