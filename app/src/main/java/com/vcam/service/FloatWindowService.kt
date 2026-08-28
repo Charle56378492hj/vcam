@@ -25,6 +25,7 @@ class FloatWindowService : Service() {
         const val ACTION_UPDATE_STATUS  = "com.vcam.float.UPDATE_STATUS"
         const val EXTRA_TARGET_NAME     = "float_target_name"
         const val EXTRA_IS_VIDEO        = "float_is_video"
+        const val EXTRA_IS_BRIDGE       = "float_is_bridge"
         const val ACTION_ROTATE         = "com.vcam.float.ROTATE"
         const val ACTION_MIRROR         = "com.vcam.float.MIRROR"
         const val ACTION_STOP_VCAM      = "com.vcam.float.STOP_VCAM"
@@ -71,6 +72,7 @@ class FloatWindowService : Service() {
     private var isExpanded = false
     private var isExtraVisible = false
     private var currentMode = "images"  // "images" or "videos"
+    private var isBridgeMode = false
 
     // Zoom, scale, pan state
     private var zoomFactor = 1.0f
@@ -94,6 +96,7 @@ class FloatWindowService : Service() {
             ACTION_START -> {
                 val targetName = intent.getStringExtra(EXTRA_TARGET_NAME) ?: "All Apps"
                 val isVideo    = intent.getBooleanExtra(EXTRA_IS_VIDEO, false)
+                isBridgeMode   = intent.getBooleanExtra(EXTRA_IS_BRIDGE, false)
                 startForeground(NOTIF_ID, buildNotification(targetName, isVideo))
                 showFloatWindow(targetName, isVideo)
             }
@@ -118,7 +121,19 @@ class FloatWindowService : Service() {
         // Status labels
         view.findViewById<TextView>(R.id.tv_float_target)?.text =
             if (targetName.length > 18) targetName.take(16) + "…" else targetName
-        updateTypeLabel(view, activeSlot)
+        if (isBridgeMode) {
+            // OBS frames are the only source in this session. Hide local slots
+            // and retain only non-source controls such as rotate, mirror and stop.
+            view.findViewById<View>(R.id.float_source_tabs)?.visibility = View.GONE
+            view.findViewById<View>(R.id.float_source_slots)?.visibility = View.GONE
+            view.findViewById<View>(R.id.float_source_divider)?.visibility = View.GONE
+            view.findViewById<TextView>(R.id.tv_float_type)?.text =
+                getString(R.string.float_obs_live)
+            view.findViewById<TextView>(R.id.tv_float_slot)?.text =
+                getString(R.string.float_obs_live)
+        } else {
+            updateTypeLabel(view, activeSlot)
+        }
 
         // ── Mode tabs (Images / Videos) ──
         val tabImages = view.findViewById<TextView>(R.id.btn_tab_images)
@@ -397,6 +412,10 @@ class FloatWindowService : Service() {
     // ── Slot switching ────────────────────────────────────────────────
 
     private fun switchToSlot(view: View, slot: Int) {
+        if (isBridgeMode) {
+            Toast.makeText(this, getString(R.string.bridge_source_locked), Toast.LENGTH_SHORT).show()
+            return
+        }
         if (!MediaSlotManager.isSlotSet(this, slot)) {
             Toast.makeText(this, getString(R.string.slot_not_set, slot), Toast.LENGTH_SHORT).show()
             return
@@ -448,7 +467,8 @@ class FloatWindowService : Service() {
 
     private fun updateTypeLabel(view: View, slot: Int) {
         view.findViewById<TextView>(R.id.tv_float_type)?.text =
-            if (slot >= 5) "🎬 ${slot - 4}" else "📷 $slot"
+            if (isBridgeMode) getString(R.string.float_obs_live)
+            else if (slot >= 5) "🎬 ${slot - 4}" else "📷 $slot"
     }
 
     // ── Preview ───────────────────────────────────────────────────────
