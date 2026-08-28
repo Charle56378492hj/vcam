@@ -54,6 +54,7 @@
 
         <!-- Mode tabs: IMG / VID -->
         <LinearLayout
+            android:id="@+id/float_source_tabs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -89,6 +90,7 @@
 
         <!-- Slot buttons 1-4 -->
         <LinearLayout
+            android:id="@+id/float_source_slots"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -146,6 +148,7 @@
 
         <!-- Divider -->
         <View
+            android:id="@+id/float_source_divider"
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="@color/color_divider"
