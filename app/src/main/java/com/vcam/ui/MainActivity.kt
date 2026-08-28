@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
                 MediaSlotManager.setSlot(this@MainActivity, slot, uri, isVideo)
             }
             refreshSlotUI(slot)
-            binding.btnStartStop.isEnabled = MediaSlotManager.isSlotSet(this@MainActivity, 1)
+            updateStartButtonAvailability()
         }
     }
 
@@ -90,7 +90,7 @@ class MainActivity : AppCompatActivity() {
         setupLivePreview()
         requestPermissions()
         (1..8).forEach { refreshSlotUI(it) }
-        binding.btnStartStop.isEnabled = MediaSlotManager.isSlotSet(this, 1)
+        updateStartButtonAvailability()
 
         // My Account button
         binding.btnMyAccount.setOnClickListener {
@@ -139,7 +139,20 @@ class MainActivity : AppCompatActivity() {
             binding.btnStartStop.backgroundTintList = ContextCompat.getColorStateList(
                 this, if (running) R.color.color_stop else R.color.color_start
             )
+            updateStartButtonAvailability(running)
         }
+    }
+
+    /**
+     * OBS Bridge does not require a local slot. Keep Start enabled whenever
+     * the link is active so an empty media library cannot block live OBS input.
+     */
+    private fun updateStartButtonAvailability(
+        serviceRunning: Boolean = viewModel.isServiceRunning.value ?: false
+    ) {
+        binding.btnStartStop.isEnabled = serviceRunning ||
+            ConnectServer.isEnabled(this) ||
+            MediaSlotManager.isSlotSet(this, 1)
     }
 
     // ── Slot Pickers ──────────────────────────────────────────────────────
@@ -167,7 +180,7 @@ class MainActivity : AppCompatActivity() {
             btn.setOnClickListener {
                 MediaSlotManager.clearSlot(this, slot)
                 refreshSlotUI(slot)
-                binding.btnStartStop.isEnabled = MediaSlotManager.isSlotSet(this, 1)
+                updateStartButtonAvailability()
             }
         }
     }
@@ -379,6 +392,7 @@ class MainActivity : AppCompatActivity() {
             }
             refreshLinkUI()
             refreshLivePreviewUI()
+            updateStartButtonAvailability()
         }
     }
 
