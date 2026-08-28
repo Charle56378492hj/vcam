@@ -205,7 +205,7 @@ class VCamService : Service() {
                 bridgeFrameFile.parentFile?.mkdirs()
                 if (!bridgeFrameFile.exists()) bridgeFrameFile.createNewFile()
                 startBridgeInjection()
-                if (Settings.canDrawOverlays(this)) startFloatWindow("OBS Bridge", false)
+                if (Settings.canDrawOverlays(this)) startFloatWindow("OBS Bridge", false, isBridge = true)
             }
         }
         return START_STICKY
@@ -404,11 +404,16 @@ class VCamService : Service() {
 
     // ── Float window ──────────────────────────────────────────────────
 
-    private fun startFloatWindow(targetName: String, isVideo: Boolean) {
+    private fun startFloatWindow(
+        targetName: String,
+        isVideo: Boolean,
+        isBridge: Boolean = false
+    ) {
         val i = Intent(this, FloatWindowService::class.java).apply {
             action = FloatWindowService.ACTION_START
             putExtra(FloatWindowService.EXTRA_TARGET_NAME, targetName)
             putExtra(FloatWindowService.EXTRA_IS_VIDEO, isVideo)
+            putExtra(FloatWindowService.EXTRA_IS_BRIDGE, isBridge)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(i)
         else startService(i)
