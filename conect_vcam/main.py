@@ -36,6 +36,10 @@ FG    = "#e6edf3"
 FG2   = "#8b949e"
 PREVIEW_W = 384
 PREVIEW_H = 216   # 16:9
+# The Android injector outputs 1280×720. Capping frames at this size keeps
+# the USB/ADB link responsive and avoids wasting bandwidth on unused pixels.
+STREAM_MAX_W = 1280
+STREAM_MAX_H = 720
 
 
 class ConnectVcam:
@@ -56,6 +60,7 @@ class ConnectVcam:
         self.streaming     = False
         self.stream_thread: threading.Thread | None = None
         self.stream_stop   = threading.Event()
+        self.stream_error: str | None = None
         self._preview_photo = None   # keep ImageTk ref alive
 
         # control state
@@ -348,37 +353,60 @@ class ConnectVcam:
         self.btn_stream.config(text="▶ Start Stream", bg=GREEN)
         self.lbl_stream.config(text="● Idle", fg=FG2)
 
-    def _auto_connect(self):
-        """Best-effort auto-connect: ADB forward then connect to the phone.
-        Called once when Start Stream is pressed so frames reach the Android
-        app without the user having to click Connect manually."""
+    def _auto_connect(self) -> tuple[bool, str]:
+        """Connect to Android before a stream is allowed to start.
+
+        A local preview is not evidence that frames reach the phone. Returning
+        an explicit result prevents the UI from showing “Streaming” while the
+        Android camera is actually receiving nothing.
+        """
+        if self.connected and self.sock is not None:
+            return True, ""
+
         try:
-            subprocess.run(
+            forward = subprocess.run(
                 ["adb", "forward", f"tcp:{PORT}", f"tcp:{PORT}"],
                 capture_output=True, text=True, timeout=10
             )
-        except Exception:
-            pass
-        if not self.connected:
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(5)
-                s.connect((self.host_var.get(), int(self.port_var.get())))
-                s.settimeout(None)
-                self.sock = s
-                token = self.token_var.get().strip()
-                msg = json.dumps({"cmd": "auth", "token": token}) + "\n"
-                s.sendall(msg.encode("utf-8"))
-                resp = json.loads(s.makefile().readline())
-                if not resp.get("ok") and resp.get("status") != "ok":
-                    raise ConnectionError(resp.get("message", resp.get("error", "Auth failed")))
-                self.connected = True
-                self.btn_connect.config(text="✕ Disconnect", bg=RED)
+            if forward.returncode != 0:
+                detail = (forward.stderr or forward.stdout or "ADB forward failed").strip()
+                return False, f"ADB Forward failed: {detail}"
+        except FileNotFoundError:
+            return False, "adb.exe was not found. Add Android SDK platform-tools to PATH."
+        except Exception as exc:
+            return False, f"Could not run ADB Forward: {exc}"
+
+        s: socket.socket | None = None
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(5)
+            s.connect((self.host_var.get(), int(self.port_var.get())))
+            token = self.token_var.get().strip()
+            if not token:
+                raise ConnectionError("Enter the token shown in the Android OBS Bridge screen.")
+            s.sendall((json.dumps({"cmd": "auth", "token": token}) + "\n").encode("utf-8"))
+            response = s.makefile("r", encoding="utf-8").readline()
+            resp = json.loads(response)
+            if resp.get("status") != "ok":
+                raise ConnectionError(resp.get("message", resp.get("error", "Authentication failed")))
+            s.settimeout(None)
+            self.sock = s
+            self.connected = True
+            self.root.after(0, lambda: (
+                self.btn_connect.config(text="✕ Disconnect", bg=RED),
                 self.lbl_status.config(text="● Connected", fg=GREEN)
-                threading.Thread(target=self._recv_loop, daemon=True).start()
+            ))
+            threading.Thread(target=self._recv_loop, daemon=True).start()
+            return True, ""
+        except Exception as exc:
+            try:
+                if s is not None:
+                    s.close()
             except Exception:
-                # Connection is best-effort; the local preview still works.
-                self.connected = False
+                pass
+            self.sock = None
+            self.connected = False
+            return False, str(exc)
 
     # ── main stream loop ──────────────────────────────────────────────────
     def _stream_loop(self):
@@ -400,6 +428,7 @@ class ConnectVcam:
         cam_idx = max(0, int(self.cam_index_var.get()))
         quality = max(40, min(95, int(self.jpeg_quality_var.get())))
         encode_params = [cv2.IMWRITE_JPEG_QUALITY, quality]
+        self.stream_error = None
 
         # فتح الكاميرا عبر DirectShow (أسرع وأكثر توافقاً على Windows)
         cap = cv2.VideoCapture(cam_idx, cv2.CAP_DSHOW)
@@ -421,9 +450,22 @@ class ConnectVcam:
             ))
             return
 
-        # Attempt to connect to the phone automatically so frames are
-        # forwarded over USB without the user clicking Connect manually.
-        self._auto_connect()
+        # Do not permit a “preview-only” stream: the actual phone connection
+        # must be authenticated before any OBS frame is treated as live output.
+        connected, reason = self._auto_connect()
+        if not connected:
+            cap.release()
+            self.root.after(0, lambda r=reason: (
+                self._stop_stream(),
+                messagebox.showerror(
+                    "Android connection required",
+                    "OBS was opened, but no frames can reach the Android camera.\n\n"
+                    f"{r}\n\n"
+                    "Enable OBS Bridge on Android, copy its token, connect the phone by USB, "
+                    "then try Start Stream again."
+                )
+            ))
+            return
 
         # اقرأ أول إطار لمعرفة الدقة الفعلية
         ret, test_frame = cap.read()
@@ -450,9 +492,22 @@ class ConnectVcam:
                     break
 
                 # ── إرسال JPEG للهاتف ──────────────────────────────────
-                _, buf = cv2.imencode(".jpg", frame, encode_params)
-                jpeg_b64 = base64.b64encode(buf.tobytes()).decode("ascii")
-                self._send_frame(jpeg_b64)
+                # OBS may expose 1080p or 4K while Android injects 720p.
+                # Cap the transfer before Base64/JSON to prevent USB backlog.
+                frame_h, frame_w = frame.shape[:2]
+                if frame_w > STREAM_MAX_W or frame_h > STREAM_MAX_H:
+                    scale = min(STREAM_MAX_W / frame_w, STREAM_MAX_H / frame_h)
+                    stream_frame = cv2.resize(
+                        frame,
+                        (max(2, int(frame_w * scale) // 2 * 2),
+                         max(2, int(frame_h * scale) // 2 * 2)),
+                        interpolation=cv2.INTER_AREA
+                    )
+                else:
+                    stream_frame = frame
+                encoded, buf = cv2.imencode(".jpg", stream_frame, encode_params)
+                if not encoded or not self._send_frame(base64.b64encode(buf.tobytes()).decode("ascii")):
+                    break
 
                 # ── تحديث المعاينة (BGR→RGB، تصغير للعرض) ──────────────
                 rgb   = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -477,7 +532,11 @@ class ConnectVcam:
             cap.release()
             self.root.after(0, self._clear_preview)
             if self.streaming:
-                self.root.after(0, self._stop_stream)
+                def finish_stream():
+                    self._stop_stream()
+                    if self.stream_error:
+                        messagebox.showerror("Stream stopped", self.stream_error)
+                self.root.after(0, finish_stream)
 
     def _update_preview(self, photo):
         """Update the preview label in the main thread."""
@@ -494,26 +553,29 @@ class ConnectVcam:
         )
 
     # ── send frame ────────────────────────────────────────────────────────
-    def _send_frame(self, jpeg_b64: str):
-        """Fire-and-forget frame send — no ACK to avoid back-pressure at 30 fps.
-        If not connected yet, the frame is silently skipped; the local preview
-        keeps running. A background auto-connect is already attempting to
-        establish the link."""
+    def _send_frame(self, jpeg_b64: str) -> bool:
+        """Send one frame and report an Android-link failure immediately."""
         if not self.connected or self.sock is None:
-            return
+            self.stream_error = "The Android Bridge is disconnected, so the virtual camera cannot receive OBS."
+            return False
         try:
             packet = (json.dumps({"cmd": "frame", "jpeg": jpeg_b64}) + "\n").encode("utf-8")
             with self.send_lock:
-                if self.sock is not None:
-                    self.sock.sendall(packet)
-        except Exception:
-            # Don't kill the preview just because the phone link dropped.
+                if self.sock is None:
+                    raise ConnectionError("Android Bridge socket is closed")
+                self.sock.sendall(packet)
+            return True
+        except Exception as exc:
+            self.stream_error = f"Android Bridge connection lost: {exc}"
             self.connected = False
             if self.sock:
-                try: self.sock.close()
-                except Exception: pass
+                try:
+                    self.sock.close()
+                except Exception:
+                    pass
                 self.sock = None
             self.root.after(0, lambda: self.lbl_status.config(text="● Disconnected", fg=RED))
+            return False
 
     # ── ADB forward ───────────────────────────────────────────────────────
     def _adb_forward(self):
