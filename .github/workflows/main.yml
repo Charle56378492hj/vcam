@@ -32,6 +32,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
+          packages: platform-tools
           log-accepted-android-sdk-licenses: true
 
       - name: Install NDK and CMake
@@ -86,7 +87,7 @@ jobs:
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           retention-days: 30
 
-  # ── Windows "Conect VCam" exe ─────────────────────────────────────────────
+  # ── Windows "Conect VCam" exe ───────────────────────────────────────────
   build-windows:
     name: Build Windows Conect VCam.exe
     runs-on: windows-latest
@@ -116,7 +117,7 @@ jobs:
           path: conect_vcam/dist/ConectVCam.exe
           retention-days: 30
 
-  # ── GitHub Release (main branch only) ────────────────────────────────────
+  # ── GitHub Release (main branch only) ───────────────────────────────────
   release:
     name: Create GitHub Release
     needs: [build-android, build-windows]
