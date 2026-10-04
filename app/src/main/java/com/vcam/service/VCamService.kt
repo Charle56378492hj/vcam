@@ -10,6 +10,8 @@ import androidx.core.app.NotificationCompat
 import com.vcam.R
 import com.vcam.ui.MainActivity
 import com.vcam.utils.CameraInjector
+import com.vcam.utils.CameraSystemLogCollector
+import com.vcam.utils.DiagnosticLog
 import com.vcam.utils.MediaSlotManager
 import com.vcam.utils.RootManager
 import com.vcam.utils.VcplaxEngine
@@ -43,12 +45,15 @@ class VCamService : Service() {
     private var injector: CameraInjector? = null
     private var connectServer: ConnectServer? = null
     private var bridgeInjectionStarted = false
+    private var bridgeFrameCount = 0L
     private val bridgeFrameFile: File
         get() = File(cacheDir, "bridg/obs_frame.jpg")
 
     /** Receives rotation / mirror / slot / zoom / scale / pan commands from FloatWindowService */
     private val controlReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
+            val extras = intent.extras?.keySet()?.sorted()?.joinToString { key -> "$key=${intent.extras?.get(key)}" }.orEmpty()
+            DiagnosticLog.info("VCamService", "Control broadcast action=${intent.action}; extras=${DiagnosticLog.sanitize(extras)}")
             when (intent.action) {
                 FloatWindowService.ACTION_ROTATE -> {
                     val r = intent.getIntExtra("rotation", 0)
@@ -101,6 +106,9 @@ class VCamService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        DiagnosticLog.initialize(this)
+        DiagnosticLog.info("VCamService", "Service created")
+        CameraSystemLogCollector.start()
         createNotificationChannel()
         val filter = IntentFilter().apply {
             addAction(FloatWindowService.ACTION_ROTATE)
@@ -129,6 +137,7 @@ class VCamService : Service() {
     }
 
     override fun onDestroy() {
+        DiagnosticLog.info("VCamService", "Service destroyed; injectorPresent=${injector != null}; bridge=$bridgeInjectionStarted")
         unregisterReceiver(controlReceiver)
         stopFloatWindow()
         stopConnectServer()
@@ -137,6 +146,7 @@ class VCamService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        DiagnosticLog.info("VCamService", "onStartCommand action=${intent?.action ?: "<null/sticky restart>"}; startId=$startId; flags=$flags")
         when (intent?.action) {
             ACTION_START -> {
                 val mediaPath: String? = intent.getStringExtra(EXTRA_MEDIA_PATH)
@@ -217,6 +227,7 @@ class VCamService : Service() {
         mediaPath: String, targetPackage: String?,
         targetName: String, isVideo: Boolean
     ) {
+        DiagnosticLog.info("VCamService", "starting injection; path=$mediaPath; target=$targetPackage; name=$targetName; video=$isVideo")
         try {
             injector = CameraInjector(
                 context       = this,
@@ -225,11 +236,13 @@ class VCamService : Service() {
                 targetPackage = targetPackage
             )
             injector?.start()
+            DiagnosticLog.info("VCamService", "CameraInjector start submitted")
             updateNotification(
                 "VCam Active ✓",
                 "System-wide injection active — open any camera app"
             )
         } catch (e: Exception) {
+            DiagnosticLog.error("VCamService", "startInjection threw", e)
             updateNotification("VCam Error", e.message ?: "Unknown error")
         }
     }
@@ -237,6 +250,7 @@ class VCamService : Service() {
     private fun switchToSlot(slot: Int) {
         val path    = MediaSlotManager.getSlotPath(this, slot) ?: return
         val isVideo = MediaSlotManager.isSlotVideo(this, slot)
+        DiagnosticLog.info("VCamService", "slot switch requested; slot=$slot; path=$path; video=$isVideo")
         serviceScope.launch {
             try {
                 val prevZoom  = injector?.zoomFactor    ?: 1f
@@ -249,15 +263,21 @@ class VCamService : Service() {
                 injector?.stopMonitorOnly()
 
                 val proxy = VcplaxEngine.getProxy()
+                var reuseActiveVcplax = false
                 if (proxy != null && VcplaxEngine.isRunning) {
-                    proxy.switchSource(path, if (isVideo) 2 else 1)
+                    val result = proxy.switchSource(path, if (isVideo) 2 else 1)
+                    reuseActiveVcplax = VcplaxEngine.isRunning
+                    DiagnosticLog.info("VCamService", "Binder switchSource returned=$result; stillRunning=$reuseActiveVcplax; reuse=$reuseActiveVcplax")
+                } else {
+                    DiagnosticLog.warn("VCamService", "No active Vcplax Binder to switch; the new injector will perform a clean setup")
                 }
 
                 injector = CameraInjector(
                     context       = this@VCamService,
                     mediaPath     = path,
                     isVideo       = isVideo,
-                    targetPackage = null
+                    targetPackage = null,
+                    reuseActiveVcplax = reuseActiveVcplax
                 ).also {
                     it.zoomFactor     = prevZoom
                     it.frameFillScale = prevScale
@@ -269,13 +289,17 @@ class VCamService : Service() {
                 injector?.start()
                 updateNotification("VCam — Slot $slot Active",
                     if (isVideo) "🎬 فيديو ${slot - 4}" else "📷 صورة $slot")
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                DiagnosticLog.error("VCamService", "slot switch failed; slot=$slot; path=$path", e)
+            }
         }
     }
 
     private fun stopInjection() {
+        DiagnosticLog.info("VCamService", "stopInjection invoked; injectorPresent=${injector != null}")
         injector?.stop()
         injector = null
+        DiagnosticLog.info("VCamService", "injector reference cleared")
     }
 
     /**
@@ -287,6 +311,7 @@ class VCamService : Service() {
         bridgeFrameFile.parentFile?.mkdirs()
         bridgeInjectionStarted = true
         val path = bridgeFrameFile.absolutePath
+        DiagnosticLog.info("VCamService", "starting bridge injection; framePath=$path")
         serviceScope.launch {
             try {
                 injector?.stop()
@@ -303,6 +328,7 @@ class VCamService : Service() {
                     "Live OBS frames are being injected through VCam"
                 )
             } catch (e: Exception) {
+                DiagnosticLog.error("VCamService", "bridge injection start failed", e)
                 bridgeInjectionStarted = false
                 updateNotification("OBS Bridge Error", e.message ?: "Unable to start stream")
             }
@@ -313,6 +339,7 @@ class VCamService : Service() {
 
     private fun startConnectServer() {
         if (connectServer != null) return
+        DiagnosticLog.info("VCamService", "starting ConnectServer on port ${ConnectServer.PORT}")
         connectServer = ConnectServer(this) { cmd, params ->
             handleRemoteCommand(cmd, params)
         }
@@ -320,6 +347,7 @@ class VCamService : Service() {
     }
 
     private fun stopConnectServer() {
+        DiagnosticLog.info("VCamService", "stopping ConnectServer; present=${connectServer != null}")
         connectServer?.stop()
         connectServer = null
     }
@@ -330,6 +358,14 @@ class VCamService : Service() {
      */
     private fun handleRemoteCommand(cmd: String, params: JSONObject) {
         val inj = injector
+        if (cmd == "frame") {
+            bridgeFrameCount++
+            if (bridgeFrameCount % 90L == 1L) {
+                DiagnosticLog.info("VCamService", "bridge frame received; count=$bridgeFrameCount; encodedChars=${params.optString("jpeg", "").length}; payload omitted")
+            }
+        } else {
+            DiagnosticLog.info("VCamService", "remote command=$cmd params=${DiagnosticLog.sanitize(params.toString())}")
+        }
         when (cmd) {
             "frame" -> {
                 val encoded = params.optString("jpeg", "")

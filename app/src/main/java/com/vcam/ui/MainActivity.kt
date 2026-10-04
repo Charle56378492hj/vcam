@@ -35,6 +35,8 @@ import com.vcam.service.ConnectServer
 import com.vcam.service.VCamService
 import com.vcam.ui.account.AccountActivity
 import com.vcam.ui.auth.LoginActivity
+import com.vcam.utils.CameraSystemLogCollector
+import com.vcam.utils.DiagnosticLog
 import com.vcam.utils.MediaSlotManager
 import com.vcam.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
@@ -79,6 +81,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DiagnosticLog.initialize(this)
+        DiagnosticLog.info("MainActivity", "Main screen created")
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setupObservers()
@@ -95,6 +99,10 @@ class MainActivity : AppCompatActivity() {
         // My Account button
         binding.btnMyAccount.setOnClickListener {
             startActivity(Intent(this, AccountActivity::class.java))
+        }
+        binding.btnLogs.setOnClickListener {
+            DiagnosticLog.info("MainActivity", "User opened diagnostic log page")
+            startActivity(Intent(this, LogActivity::class.java))
         }
     }
 
@@ -126,6 +134,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupObservers() {
         viewModel.rootStatus.observe(this) { hasRoot ->
+            DiagnosticLog.info("MainActivity", "Root access check result=$hasRoot")
+            if (hasRoot) CameraSystemLogCollector.start()
+            else DiagnosticLog.warn("MainActivity", "Root unavailable; camera-system logcat capture needs root access")
             binding.tvRootStatus.text = if (hasRoot) getString(R.string.root_granted) else getString(R.string.root_denied)
             binding.tvRootStatus.setTextColor(
                 getColor(if (hasRoot) R.color.color_root_ok else R.color.color_root_fail)
@@ -345,6 +356,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun doStartService() {
         val slot1Path = MediaSlotManager.getSlotPath(this, 1) ?: return
+        DiagnosticLog.info("MainActivity", "Starting local injection; mediaPath=$slot1Path")
         val intent = Intent(this, VCamService::class.java).apply {
             action = VCamService.ACTION_START
             putExtra(VCamService.EXTRA_MEDIA_PATH, slot1Path)
@@ -357,6 +369,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun doStartBridgeService() {
+        DiagnosticLog.info("MainActivity", "Starting OBS/Bridg bridge service")
         val intent = Intent(this, VCamService::class.java).apply {
             action = VCamService.ACTION_START_BRIDGE
         }
@@ -367,6 +380,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopVCamService() {
+        DiagnosticLog.info("MainActivity", "User requested VCam stop")
         startService(Intent(this, VCamService::class.java).apply { action = VCamService.ACTION_STOP })
         viewModel.setServiceRunning(false)
     }

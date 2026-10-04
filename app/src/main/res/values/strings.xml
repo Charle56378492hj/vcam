@@ -167,4 +167,12 @@
     <string name="bridge_injection_active">حقن Bridg مباشر — البث يعمل الآن</string>
     <string name="float_obs_live">OBS مباشر</string>
     <string name="bridge_source_locked">بث OBS المباشر نشط؛ أوقفه أولاً لتبديل مصدر محلي.</string>
+    <string name="logs_title">السجل</string>
+    <string name="logs_copy">نسخ السجل</string>
+    <string name="logs_clear">مسح السجل القديم</string>
+    <string name="logs_empty">لا توجد سجلات بعد</string>
+    <string name="logs_copied">تم نسخ السجل الكامل</string>
+    <string name="logs_cleared">تم مسح السجل القديم</string>
+    <string name="logs_clear_title">مسح السجل</string>
+    <string name="logs_clear_confirm">سيتم حذف السجل المحفوظ حالياً من هذا الجهاز. هل تريد المتابعة؟</string>
 </resources>

@@ -2,6 +2,7 @@ package com.vcam.service
 
 import android.content.Context
 import android.util.Log
+import com.vcam.utils.DiagnosticLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -76,20 +77,27 @@ class ConnectServer(
         // user can turn the bridge off and on again without restarting VCam.
         scope = CoroutineScope(Dispatchers.IO + Job())
         running = true
+        DiagnosticLog.info(TAG, "Starting control server; port=$PORT")
         scope.launch {
             try {
                 val ss = ServerSocket(PORT).also { it.reuseAddress = true; serverSocket = it }
                 Log.d(TAG, "ConnectServer listening on port $PORT")
+                DiagnosticLog.info(TAG, "Listening on port $PORT")
                 while (running && isActive) {
                     try {
                         val client = ss.accept()
+                        DiagnosticLog.info(TAG, "Client connected from ${client.inetAddress?.hostAddress ?: "unknown"}:${client.port}")
                         launch { handleClient(client) }
                     } catch (e: Exception) {
-                        if (running) Log.w(TAG, "Accept error: ${e.message}")
+                        if (running) {
+                            Log.w(TAG, "Accept error: ${e.message}")
+                            DiagnosticLog.warn(TAG, "Accept error: ${e.message}")
+                        }
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Server error: ${e.message}")
+                DiagnosticLog.error(TAG, "Server startup/runtime error", e)
             }
         }
     }
@@ -99,6 +107,7 @@ class ConnectServer(
         try { serverSocket?.close() } catch (_: Exception) {}
         try { scope.cancel() } catch (_: Exception) {}
         Log.d(TAG, "ConnectServer stopped")
+        DiagnosticLog.info(TAG, "Control server stopped")
     }
 
     private fun handleClient(socket: Socket) {
@@ -131,6 +140,7 @@ class ConnectServer(
                         "auth" -> {
                             val clientToken = json.optString("token", "")
                             authenticated = clientToken == token
+                            DiagnosticLog.info(TAG, "Client authentication ${if (authenticated) "succeeded" else "failed"}; token value omitted")
                             if (authenticated) reply(JSONObject().put("status", "ok").put("message", "authenticated"))
                             else err("invalid token")
                         }
@@ -160,6 +170,7 @@ class ConnectServer(
             }
         } catch (e: Exception) {
             Log.d(TAG, "Client disconnected: ${e.message}")
+            DiagnosticLog.info(TAG, "Client disconnected: ${e.message}")
         } finally {
             try { socket.close() } catch (_: Exception) {}
         }

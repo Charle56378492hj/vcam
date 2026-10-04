@@ -29,6 +29,7 @@ class CameraInjector(
     private val isVideo: Boolean,
     private val targetPackage: String?,
     private val isLiveStream: Boolean = false,
+    private val reuseActiveVcplax: Boolean = false,
     @Volatile var rotation: Int = 0,
     @Volatile var mirror: Boolean = false,
     @Volatile var zoomFactor: Float = 1f,
@@ -78,11 +79,13 @@ class CameraInjector(
     // ── Public API ──────────────────────────────────────────────────────────
 
     fun start() {
+        DiagnosticLog.info(TAG, "start requested; mediaPath=$mediaPath; isVideo=$isVideo; live=$isLiveStream; target=$targetPackage")
         running = true
         injectionJob = scope.launch { performInjection() }
     }
 
     fun stop() {
+        DiagnosticLog.info(TAG, "stop requested; usingVcplax=$usingVcplax; mediaPath=$mediaPath")
         running = false
         injectionJob?.cancel()
 
@@ -98,6 +101,7 @@ class CameraInjector(
             )
             RootManager.runCommand("setprop ctl.restart cameraserver")
         }
+        DiagnosticLog.info(TAG, "stop completed")
         Log.d(TAG, "VCam stopped")
     }
 
@@ -107,9 +111,11 @@ class CameraInjector(
      * already-running vcplax process instead of restarting it.
      */
     fun stopMonitorOnly() {
+        DiagnosticLog.info(TAG, "stopMonitorOnly requested; keeping Vcplax process for source switch")
         running = false
         injectionJob?.cancel()
         usingVcplax = false
+        DiagnosticLog.info(TAG, "monitor stopped; Binder process intentionally retained")
         Log.d(TAG, "Monitor stopped (vcplax kept alive)")
     }
 
@@ -117,21 +123,32 @@ class CameraInjector(
 
     private suspend fun performInjection() {
         Log.d(TAG, "performInjection: isVideo=$isVideo target=$targetPackage")
+        DiagnosticLog.info(TAG, "injection pipeline entered; path=$mediaPath; video=$isVideo; live=$isLiveStream")
 
         // Bridg supplies a new JPEG roughly every 33 ms. It intentionally
         // bypasses the static-file Vcplax path and uses the existing native
         // V4L2/shared-frame injection path, so the original local workflow
         // remains unchanged.
         if (isLiveStream) {
+            DiagnosticLog.info(TAG, "live stream selected: legacy V4L2/shared-file pipeline")
             legacyInject()
+            return
+        }
+
+        if (reuseActiveVcplax && VcplaxEngine.isRunning) {
+            usingVcplax = true
+            DiagnosticLog.info(TAG, "reusing active Vcplax Binder stream; skipping setup/start so it is not killed or restarted")
+            monitorVcplaxTransforms()
             return
         }
 
         // ── PRIMARY: VcplaxEngine ──────────────────────────────────────────────
         try {
             val engineReady = VcplaxEngine.setup(context)
+            DiagnosticLog.info(TAG, "Vcplax setup result=$engineReady")
             if (engineReady) {
                 val started = VcplaxEngine.startInjection(mediaPath, loop = isVideo)
+                DiagnosticLog.info(TAG, "Vcplax startInjection result=$started")
                 if (started) {
                     usingVcplax = true
                     Log.d(TAG, "VcplaxEngine injection active ✓")
@@ -149,6 +166,7 @@ class CameraInjector(
         }
 
         // ── FALLBACK: Legacy HAL1 + v4l2loopback ──────────────────────────────
+        DiagnosticLog.warn(TAG, "Vcplax unavailable or start failed; switching to legacy injection")
         Log.w(TAG, "VcplaxEngine unavailable — falling back to legacy injection")
         legacyInject()
     }
@@ -224,16 +242,21 @@ class CameraInjector(
     // ── Legacy injection ────────────────────────────────────────────────────
 
     private suspend fun legacyInject() {
+        DiagnosticLog.info(TAG, "legacy pipeline setup; mediaPath=$mediaPath")
         setupInjectLib()
         tryLoadV4L2Module()
         val devices = RootManager.getVideoDevices()
+        DiagnosticLog.info(TAG, "video devices discovered=${devices.joinToString(", ")}; count=${devices.size}")
         setupLdPreload()
 
         if (devices.isNotEmpty()) {
             val device = devices.last()
+            DiagnosticLog.info(TAG, "attempting V4L2 frame loop on $device")
             val started = tryStartV4L2(device)
+            DiagnosticLog.info(TAG, "native V4L2 frame loop start result=$started")
             if (started) { streamFramesToV4L2(device); return }
         }
+        DiagnosticLog.warn(TAG, "V4L2 device/start unavailable; falling back to shared frame file")
         streamFramesToSharedFile()
     }
 
@@ -325,6 +348,8 @@ class CameraInjector(
      */
     private suspend fun streamLiveImage() = withContext(Dispatchers.IO) {
         resetLastRendered()
+        var submittedFrames = 0L
+        var missingFrameLogged = false
         try {
             while (running) {
                 val current = loadBitmapForInjection(mediaPath)
@@ -334,6 +359,14 @@ class CameraInjector(
                     if (transformed !== current) transformed.recycle()
                     current.recycle()
                     nativeUpdateYUYVFrame(yuyv, TARGET_W, TARGET_H)
+                    submittedFrames++
+                    if (submittedFrames == 1L || submittedFrames % 90L == 0L) {
+                        DiagnosticLog.info(TAG, "live frame submitted; count=$submittedFrames; path=$mediaPath; bytes=${File(mediaPath).length()}")
+                    }
+                    missingFrameLogged = false
+                } else if (!missingFrameLogged) {
+                    DiagnosticLog.warn(TAG, "live source is not decodable yet; waiting for frame at $mediaPath")
+                    missingFrameLogged = true
                 }
                 delay(33L)
             }
@@ -350,11 +383,13 @@ class CameraInjector(
     private suspend fun streamImage() = withContext(Dispatchers.IO) {
         val rawBitmap = loadBitmapForInjection(mediaPath)
         if (rawBitmap == null) {
+            DiagnosticLog.error(TAG, "Cannot load image source: $mediaPath")
             Log.e(TAG, "Cannot load image: $mediaPath"); return@withContext
         }
 
         resetLastRendered()
         var firstRender = true
+        var submittedFrames = 0L
 
         try {
             while (running) {
@@ -369,6 +404,8 @@ class CameraInjector(
                     val yuyv = bitmapToYUYV(transformed, TARGET_W, TARGET_H)
                     if (transformed !== rawBitmap) transformed.recycle()
                     nativeUpdateYUYVFrame(yuyv, TARGET_W, TARGET_H)
+                    submittedFrames++
+                    DiagnosticLog.info(TAG, "image frame submitted; count=$submittedFrames; source=$mediaPath; size=${yuyv.size} bytes")
                 }
 
                 delay(RENDER_POLL_MS)
@@ -388,6 +425,7 @@ class CameraInjector(
 
             var posMs = 0L
             val frameIntervalMs = 33L
+            var submittedFrames = 0L
 
             while (running) {
                 val frameBitmap = retriever.getFrameAtTime(
@@ -399,6 +437,10 @@ class CameraInjector(
                     if (transformed !== frameBitmap) transformed.recycle()
                     frameBitmap.recycle()
                     nativeUpdateYUYVFrame(yuyv, TARGET_W, TARGET_H)
+                    submittedFrames++
+                    if (submittedFrames == 1L || submittedFrames % 90L == 0L) {
+                        DiagnosticLog.info(TAG, "video frame submitted; count=$submittedFrames; path=$mediaPath; posMs=$posMs/$durationMs; size=${yuyv.size} bytes")
+                    }
                 }
                 posMs += frameIntervalMs
                 if (posMs >= durationMs) posMs = 0L
@@ -463,8 +505,12 @@ class CameraInjector(
                 inSampleSize = sample
             }
             Log.d(TAG, "loadBitmapForInjection: ${bounds.outWidth}x${bounds.outHeight} → sample=$sample")
+            if (!isLiveStream) {
+                DiagnosticLog.info(TAG, "image decoded; path=$path; dimensions=${bounds.outWidth}x${bounds.outHeight}; sample=$sample")
+            }
             BitmapFactory.decodeFile(path, opts)
         } catch (e: Exception) {
+            DiagnosticLog.error(TAG, "loadBitmapForInjection failed for $path", e)
             Log.e(TAG, "loadBitmapForInjection failed: ${e.message}")
             null
         }

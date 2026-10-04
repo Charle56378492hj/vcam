@@ -49,11 +49,13 @@ object VcplaxEngine {
      * Safe to call multiple times (kills existing instance first).
      */
     suspend fun setup(context: Context): Boolean = withContext(Dispatchers.IO) {
+        DiagnosticLog.info(TAG, "setup entered; lib=$VC_LIB_PATH shadow=$SHADOW_LIB_PATH executable=$VCPLAX_PATH")
         try {
             // 1. Detect architecture
             val is32bit = RootManager.runCommand("file /system/bin/cameraserver").output.contains("32-bit")
             val abiDir  = if (is32bit) "lib/armeabi-v7a" else "lib/arm64-v8a"
             Log.d(TAG, "ABI: $abiDir")
+            DiagnosticLog.info(TAG, "detected ABI=$abiDir; 32bit=$is32bit")
 
             // 2. Extract .so files from the APK zip to filesDir
             val filesDir = context.filesDir.also { it.mkdirs() }
@@ -75,6 +77,11 @@ object VcplaxEngine {
 
             // 3. Kill any running vcplax
             RootManager.runCommand("killall vcplax 2>/dev/null; sleep 0.3")
+            // Any cached Binder belongs to the process just killed. Never call
+            // start() through that proxy after launching the replacement.
+            proxy = null
+            initialized = false
+            DiagnosticLog.info(TAG, "cleared stale Binder proxy after stopping old vcplax")
 
             // 4. Copy to /data/ with root
             RootManager.runCommand("cp '$libDir/libvc.so' $VC_LIB_PATH && chmod 644 $VC_LIB_PATH")
@@ -85,12 +92,14 @@ object VcplaxEngine {
             val vcplaxExists = RootManager.runCommand("test -f $VCPLAX_PATH && echo ok").output.contains("ok")
             if (!vcplaxExists) {
                 Log.e(TAG, "vcplax binary not found after copy")
+                DiagnosticLog.error(TAG, "vcplax missing after copy at $VCPLAX_PATH; source=$libDir/vcplax.so")
                 return@withContext false
             }
 
             // 5. Get or generate a unique Binder service name
             val svcName = getOrCreateServiceName(context)
             binderName  = svcName
+            DiagnosticLog.info(TAG, "launching Binder service process; serviceName=$svcName")
 
             // 6. Temporarily disable SELinux, start vcplax, re-enable
             RootManager.runCommand("setenforce 0 2>/dev/null || true")
@@ -101,6 +110,7 @@ object VcplaxEngine {
             true
         } catch (e: Exception) {
             Log.e(TAG, "setup failed: ${e.message}", e)
+            DiagnosticLog.error(TAG, "setup failed", e)
             false
         }
     }
@@ -122,14 +132,17 @@ object VcplaxEngine {
                     val p = VcamBinderProxy(iBinder)
                     proxy = p
                     Log.d(TAG, "Connected to vcplax Binder (attempt ${attempt + 1})")
+                    DiagnosticLog.info(TAG, "Binder connected; service=$name; attempt=${attempt + 1}")
                     return@withContext p
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "connect attempt ${attempt + 1} failed: ${e.message}")
+                DiagnosticLog.warn(TAG, "Binder connection attempt ${attempt + 1} failed: ${e.message}")
             }
             delay(500)
         }
         Log.e(TAG, "Could not connect to vcplax Binder service")
+        DiagnosticLog.error(TAG, "Could not connect to Binder service=$name after retries")
         null
     }
 
@@ -140,10 +153,12 @@ object VcplaxEngine {
      */
     suspend fun startInjection(mediaPath: String, loop: Boolean = true): Boolean =
         withContext(Dispatchers.IO) {
+            DiagnosticLog.info(TAG, "startInjection requested; path=$mediaPath; loop=$loop; binder=$binderName")
             val svc = proxy ?: connect() ?: return@withContext false
             return@withContext try {
                 val result = svc.start(mediaPath, autoRotate = false, loop = loop)
                 Log.d(TAG, "start() returned: $result")
+                DiagnosticLog.info(TAG, "Binder start returned=$result")
                 // Wait for the injection to become active
                 var retries = 0
                 while (retries < 6 && !svc.isRunning) {
@@ -151,22 +166,26 @@ object VcplaxEngine {
                 }
                 val running = svc.isRunning
                 Log.d(TAG, "Injection active: $running")
+                DiagnosticLog.info(TAG, "injection status=$running; binderStatus=${try { svc.getStatus() } catch (e: Exception) { "error:${e.message}" }}; retries=$retries")
                 // Re-enable SELinux after successful start
                 if (running) RootManager.runCommand("setenforce 1 2>/dev/null || true")
                 running
             } catch (e: Exception) {
                 Log.e(TAG, "startInjection failed: ${e.message}", e)
+                DiagnosticLog.error(TAG, "startInjection failed for $mediaPath", e)
                 false
             }
         }
 
     /** Stop injection and restore normal camera behaviour. */
     fun stopInjection() {
+        DiagnosticLog.info(TAG, "stopInjection requested; binder=$binderName; hasProxy=${proxy != null}")
         try { proxy?.stop() } catch (_: Exception) {}
         RootManager.runCommand("killall vcplax 2>/dev/null || true")
         RootManager.runCommand("setenforce 1 2>/dev/null || true")
         proxy       = null
         initialized = false
+        DiagnosticLog.info(TAG, "stopInjection completed; vcplax killed and SELinux enforcement restored")
     }
 
     fun setRotation(degrees: Int) {
